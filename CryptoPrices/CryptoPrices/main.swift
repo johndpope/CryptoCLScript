@@ -50,7 +50,7 @@ func makeNetworkCall(crypto: String, fiat: String = "USD") {
 
                     var percentageChange = ""
                     if let previousPrice = readFromFile(crypto: crypto, fiat: fiat), let currentPrice = Double(price) {
-                        let percentage = round(((1 - (currentPrice/previousPrice)) * 100)*1000)/1000
+                        let percentage = round((((currentPrice/previousPrice) - 1) * 100)*1000)/1000
                         percentageChange = " (\(percentage)% since last update)"
                     }
 
