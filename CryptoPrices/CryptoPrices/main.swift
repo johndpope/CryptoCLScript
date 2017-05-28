@@ -12,62 +12,64 @@ import Foundation
 
 let sempahore = DispatchSemaphore(value: 0)
 
-let coinbaseEndpoint = "https://api.coinbase.com/v2/prices/"
-let coinbaseEndpointSuffix = "/spot"
+let providerEndpoint = "https://api.coinmarketcap.com/v1/ticker/"
 var prices = [String : String]()
 
-func makeNetworkCall(crypto: String, fiat: String = "USD") {
-    let endpoint = coinbaseEndpoint + crypto.uppercased() + "-" + fiat.uppercased() + coinbaseEndpointSuffix
+func makeNetworkCall(crypto: Crypto, fiat: String = "USD") {
+    let endpoint = providerEndpoint + crypto.rawValue + "/?convert=" + fiat.uppercased()
 
     if let endpointURL = URL(string: endpoint) {
-        var request = URLRequest(url: endpointURL)
-        request.addValue("2017-04-25", forHTTPHeaderField: "CB-VERSION")
+        let request = URLRequest(url: endpointURL)
 
         let task = URLSession.shared.dataTask(with: request) { data, response, error in
 
             guard error == nil else {
                 print("Error occured: \(error!.localizedDescription)")
+                sempahore.signal()
                 return
             }
 
             guard let validData = data else {
                 print("Data is not valid: \(String(describing: data)), \nResponse: \(String(describing: response))")
+                sempahore.signal()
                 return
             }
 
-            do {
-                if let rawData = try JSONSerialization.jsonObject(with: validData, options: .allowFragments) as? [String: Any] {
+            processData(data: validData, crypto: crypto, fiat: fiat)
 
-                    guard let data = rawData["data"] as? [String: String] else {
-                        print("Error, rawData is not in correct format: \(rawData)")
-                        return
-                    }
-
-                    guard let price = data["amount"] else {
-                        print("Error, couldn't find 'price' in \(data)")
-                        return
-                    }
-
-                    var percentageChange = ""
-                    if let previousPrice = readFromFile(crypto: crypto, fiat: fiat), let currentPrice = Double(price) {
-                        let percentage = round((((currentPrice/previousPrice) - 1) * 100)*1000)/1000
-                        percentageChange = " (\(percentage)% since last update)"
-                    }
-
-                    let text = "1 \(crypto) = \(price) \(fiat)"
-                    print(text  + percentageChange)
-                    saveToFiles(crypto: crypto, fiat: fiat, text: text)
-                }
-            } catch let jsonError {
-                print("Error in JSONSerialization: \(jsonError.localizedDescription)")
-            }
-
-            sempahore.signal()
         }
-
         task.resume()
         sempahore.wait()
     }
+}
+
+func processData(data: Data, crypto: Crypto, fiat: String) {
+
+    do {
+        if let rawData = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [[String: String]] {
+
+            guard let price = rawData[0]["price_usd"] else {
+                print("Error, couldn't find 'price' in \(data)")
+                sempahore.signal()
+                return
+            }
+
+            var percentageChange = ""
+            if let previousPrice = readFromFile(crypto: "\(crypto)", fiat: fiat), let currentPrice = Double(price) {
+                let percentage = round((((currentPrice/previousPrice) - 1) * 100)*1000)/1000
+                percentageChange = " (\(percentage)% since last update)"
+            }
+
+            let text = "1 \(crypto) = \(price) \(fiat)"
+            print(text  + percentageChange)
+            saveToFiles(crypto: "\(crypto)", fiat: fiat, text: text)
+        }
+    } catch let jsonError {
+        print("Error in JSONSerialization: \(jsonError.localizedDescription)")
+        sempahore.signal()
+    }
+
+    sempahore.signal()
 }
 
 func saveToFiles(crypto: String, fiat: String, text: String) {
@@ -118,8 +120,23 @@ func readFromFile(crypto: String, fiat: String) -> Double? {
     return nil
 }
 
+enum Crypto: String {
+    case BTC = "bitcoin"
+    case ETH = "ethereum"
+    case XLM = "stellar"
+    case RLC = "rlc"
+    case GNO = "gnosis-gno"
+    case ANT = "aragon"
+    case SJCX = "storjcoin-x"
+}
+
 print("\nCurrent spot prices")
 print("===================")
-makeNetworkCall(crypto: "ETH")
-makeNetworkCall(crypto: "BTC")
+makeNetworkCall(crypto: .BTC)
+makeNetworkCall(crypto: .ETH)
+makeNetworkCall(crypto: .XLM)
+makeNetworkCall(crypto: .RLC)
+makeNetworkCall(crypto: .GNO)
+makeNetworkCall(crypto: .ANT)
+makeNetworkCall(crypto: .SJCX)
 print("\n")
