@@ -1,7 +1,7 @@
 # CryptoCLScript
 A simple command line script written in Swift to pull in multiple cryptocurrency prices from Coinmarketcap API.
 
-![alt text](https://raw.githubusercontent.com/mrdavey/CryptoCLScript/master/sample.gif "CryptoCLScript in action)
+![](https://raw.githubusercontent.com/mrdavey/CryptoCLScript/master/sample.gif)
 
 Historic and recent prices are recorded in a text file located in your `Documents` folder.
 
