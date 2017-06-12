@@ -122,6 +122,7 @@ func readFromFile(crypto: String, fiat: String) -> Double? {
 
 enum Crypto: String {
     case BTC = "bitcoin"
+    case LTC = "litecoin"
     case ETH = "ethereum"
     case XLM = "stellar"
     case RLC = "rlc"
@@ -133,6 +134,7 @@ enum Crypto: String {
 print("\nCurrent spot prices")
 print("===================")
 makeNetworkCall(crypto: .BTC)
+makeNetworkCall(crypto: .LTC)
 makeNetworkCall(crypto: .ETH)
 makeNetworkCall(crypto: .XLM)
 makeNetworkCall(crypto: .RLC)
