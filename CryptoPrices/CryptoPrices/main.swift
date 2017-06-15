@@ -14,6 +14,26 @@ let sempahore = DispatchSemaphore(value: 0)
 
 let providerEndpoint = "https://api.coinmarketcap.com/v1/ticker/"
 var prices = [String]()
+var showCopyPasteFriendly = false
+
+//
+// MARK: - CommandLine argument parsing
+//
+
+let args = CommandLine.arguments
+let flags = Array(args.dropFirst())
+var continueExecution = true
+
+for (index, flag) in flags.enumerated() {
+    switch flag {
+    case "-n":  showCopyPasteFriendly = true
+    default:    break
+    }
+}
+
+//
+// MARK: - Data parsing
+//
 
 func makeNetworkCall(crypto: Crypto, fiat: String = "USD") {
     let endpoint = providerEndpoint + crypto.rawValue + "/?convert=" + fiat.uppercased()
@@ -143,9 +163,12 @@ makeNetworkCall(crypto: .GNO)
 makeNetworkCall(crypto: .ANT)
 makeNetworkCall(crypto: .SJCX)
 print("\n")
-print("Copy/paste friendly")
-print("===================")
 
-for price in prices {
-    print(price)
+if showCopyPasteFriendly {
+    print("Copy/paste friendly")
+    print("===================")
+
+    for price in prices {
+        print(price)
+    }
 }

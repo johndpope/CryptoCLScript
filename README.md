@@ -7,6 +7,8 @@ Historic and recent prices are recorded in a text file located in your `Document
 
 To run script, go to directory in terminal and execute `./main.swift`
 
+To show 'copy+paste' friendly numbers (for pasting into Excel or Numbers), add the `-n` command line argument. E.g. `./main.swift -n`
+
 ## To add other cryptocurrencies
 You can easily add the cryptocurrencies you want to track by adding them in `main.swift` as an enum, then making the network call.
 
