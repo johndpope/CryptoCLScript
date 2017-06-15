@@ -13,7 +13,7 @@ import Foundation
 let sempahore = DispatchSemaphore(value: 0)
 
 let providerEndpoint = "https://api.coinmarketcap.com/v1/ticker/"
-var prices = [String : String]()
+var prices = [String]()
 
 func makeNetworkCall(crypto: Crypto, fiat: String = "USD") {
     let endpoint = providerEndpoint + crypto.rawValue + "/?convert=" + fiat.uppercased()
@@ -62,6 +62,7 @@ func processData(data: Data, crypto: Crypto, fiat: String) {
 
             let text = "1 \(crypto) = \(price) \(fiat)"
             print(text  + percentageChange)
+            prices.append("\(price)")
             saveToFiles(crypto: "\(crypto)", fiat: fiat, text: text)
         }
     } catch let jsonError {
@@ -122,8 +123,8 @@ func readFromFile(crypto: String, fiat: String) -> Double? {
 
 enum Crypto: String {
     case BTC = "bitcoin"
-    case LTC = "litecoin"
     case ETH = "ethereum"
+    case LTC = "litecoin"
     case XLM = "stellar"
     case RLC = "rlc"
     case GNO = "gnosis-gno"
@@ -134,11 +135,17 @@ enum Crypto: String {
 print("\nCurrent spot prices")
 print("===================")
 makeNetworkCall(crypto: .BTC)
-makeNetworkCall(crypto: .LTC)
 makeNetworkCall(crypto: .ETH)
+makeNetworkCall(crypto: .LTC)
 makeNetworkCall(crypto: .XLM)
 makeNetworkCall(crypto: .RLC)
 makeNetworkCall(crypto: .GNO)
 makeNetworkCall(crypto: .ANT)
 makeNetworkCall(crypto: .SJCX)
 print("\n")
+print("Copy/paste friendly")
+print("===================")
+
+for price in prices {
+    print(price)
+}

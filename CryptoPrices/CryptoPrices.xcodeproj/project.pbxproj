@@ -23,6 +23,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F34536461EF27AA200326CA3 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		F3C7591F1EAF629100381853 /* CryptoPrices */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CryptoPrices; sourceTree = BUILT_PRODUCTS_DIR; };
 		F3C759221EAF629100381853 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -41,6 +42,7 @@
 		F3C759161EAF629100381853 = {
 			isa = PBXGroup;
 			children = (
+				F34536461EF27AA200326CA3 /* README.md */,
 				F3C759211EAF629100381853 /* CryptoPrices */,
 				F3C759201EAF629100381853 /* Products */,
 			);
@@ -251,6 +253,7 @@
 				F3C759281EAF629100381853 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
