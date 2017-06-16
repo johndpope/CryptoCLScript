@@ -35,8 +35,8 @@ for (index, flag) in flags.enumerated() {
 // MARK: - Data parsing
 //
 
-func makeNetworkCall(crypto: Crypto, fiat: String = "USD") {
-    let endpoint = providerEndpoint + crypto.rawValue + "/?convert=" + fiat.uppercased()
+func makeNetworkCall(completion: @escaping ([String: String]) -> Void) {
+    let endpoint = providerEndpoint + "?limit=100"
 
     if let endpointURL = URL(string: endpoint) {
         let request = URLRequest(url: endpointURL)
@@ -55,7 +55,27 @@ func makeNetworkCall(crypto: Crypto, fiat: String = "USD") {
                 return
             }
 
-            processData(data: validData, crypto: crypto, fiat: fiat)
+            do {
+                if let rawData = try JSONSerialization.jsonObject(with: validData, options: .allowFragments) as? [[String: Any]] {
+
+                    var cryptoPrices = [String: String]()
+
+                    for entry in rawData {
+                        guard let id = entry["id"] as? String, let price = entry["price_usd"] as? String else { break }
+                        cryptoPrices[id] = price
+                    }
+
+                    completion(cryptoPrices)
+
+                } else {
+                    print("Error! Could not serialize data")
+                    sempahore.signal()
+                }
+
+            } catch let jsonError {
+                print("Error in JSONSerialization: \(jsonError.localizedDescription)")
+                sempahore.signal()
+            }
 
         }
         task.resume()
@@ -63,39 +83,32 @@ func makeNetworkCall(crypto: Crypto, fiat: String = "USD") {
     }
 }
 
-func processData(data: Data, crypto: Crypto, fiat: String) {
+func getPrices(forCryptos cryptos: [Crypto]) {
 
-    do {
-        if let rawData = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [[String: String]] {
+    makeNetworkCall() { cryptoPrices in
 
-            guard let price = rawData[0]["price_usd"] else {
-                print("Error, couldn't find 'price' in \(data)")
-                sempahore.signal()
-                return
-            }
+        for crypto in cryptos {
+            guard let price = cryptoPrices[crypto.rawValue] else { continue }
 
             var percentageChange = ""
-            if let previousPrice = readFromFile(crypto: "\(crypto)", fiat: fiat), let currentPrice = Double(price) {
+            if let previousPrice = readFromFile(crypto: "\(crypto)"), let currentPrice = Double(price) {
                 let percentage = round((((currentPrice/previousPrice) - 1) * 100)*1000)/1000
                 percentageChange = " (\(percentage)% since last update)"
             }
 
-            let text = "1 \(crypto) = \(price) \(fiat)"
+            let text = "1 \(crypto) = \(price) USD"
             print(text  + percentageChange)
             prices.append("\(price)")
-            saveToFiles(crypto: "\(crypto)", fiat: fiat, text: text)
+            saveToFiles(crypto: "\(crypto)", text: text)
         }
-    } catch let jsonError {
-        print("Error in JSONSerialization: \(jsonError.localizedDescription)")
+
         sempahore.signal()
     }
-
-    sempahore.signal()
 }
 
-func saveToFiles(crypto: String, fiat: String, text: String) {
-    let historicFile = "\(crypto)-\(fiat)-historic.txt"
-    let recentFile = "\(crypto)-\(fiat)-recent.txt"
+func saveToFiles(crypto: String, text: String) {
+    let historicFile = "\(crypto)-USD-historic.txt"
+    let recentFile = "\(crypto)-USD-recent.txt"
 
     func writeToFile(_ fileName: String) {
         if let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
@@ -121,8 +134,8 @@ func saveToFiles(crypto: String, fiat: String, text: String) {
     writeToFile(historicFile)
 }
 
-func readFromFile(crypto: String, fiat: String) -> Double? {
-    let file = "\(crypto)-\(fiat)-recent.txt"
+func readFromFile(crypto: String) -> Double? {
+    let file = "\(crypto)-USD-recent.txt"
     if let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
 
         let path = directory.appendingPathComponent(file)
@@ -150,18 +163,23 @@ enum Crypto: String {
     case GNO = "gnosis-gno"
     case ANT = "aragon"
     case SJCX = "storjcoin-x"
+    //case STORJ = "storj"
+    case MYST = "mysterium"
+    case PLBT = "polybius"
+    case BNT = "bancor"
+
+    // New values need to be inserted above + in allValues
+
+    // You'll need to use the ID that Coinmarketcap uses.
+    // E.g. In https://coinmarketcap.com/assets/gnosis-gno/,
+    // the part after `assets` would be GNO's ID.
+
+    static let allValues: [Crypto] = [.BTC, .ETH, .LTC, .XLM, .RLC, .GNO, .ANT, .SJCX, .MYST, .PLBT, .BNT]
 }
 
 print("\nCurrent spot prices")
 print("===================")
-makeNetworkCall(crypto: .BTC)
-makeNetworkCall(crypto: .ETH)
-makeNetworkCall(crypto: .LTC)
-makeNetworkCall(crypto: .XLM)
-makeNetworkCall(crypto: .RLC)
-makeNetworkCall(crypto: .GNO)
-makeNetworkCall(crypto: .ANT)
-makeNetworkCall(crypto: .SJCX)
+getPrices(forCryptos: Crypto.allValues)
 print("\n")
 
 if showCopyPasteFriendly {
