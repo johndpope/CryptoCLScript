@@ -106,27 +106,58 @@ func getPrices(forCryptos cryptos: [Crypto]) {
     }
 }
 
+//
+// Get the CryptoCL directory, or create it if it doesn't exist
+//
+
+func getDirectory() -> URL {
+
+    guard let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
+        fatalError("Something went wrong when trying to save files")
+    }
+
+    let directoryPathForCrypto = directory.appendingPathComponent("CryptoCL")
+
+    // Used to create a directory if it doesn't already exist
+    func createDirectory() {
+        do {
+            try FileManager.default.createDirectory(atPath: directoryPathForCrypto.path, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            print("Error creating directory: \(error.localizedDescription)")
+        }
+    }
+
+    var isDirectory: ObjCBool = false
+
+    if FileManager.default.fileExists(atPath: directoryPathForCrypto.path, isDirectory: &isDirectory) {
+        if isDirectory.boolValue {
+            return directoryPathForCrypto
+        }
+    }
+    createDirectory()
+    return directoryPathForCrypto
+}
+
 func saveToFiles(crypto: String, text: String) {
     let historicFile = "\(crypto)-USD-historic.txt"
     let recentFile = "\(crypto)-USD-recent.txt"
 
+    // Write to the file in the directory
     func writeToFile(_ fileName: String) {
-        if let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
-            let path = directory.appendingPathComponent(fileName)
-            let stringToWrite = "\(Date()): \(text)"
+        let path = getDirectory().appendingPathComponent(fileName)
+        let stringToWrite = "\(Date()): \(text)"
 
-            do {
-                if let fileHandle = FileHandle(forWritingAtPath: path.path), fileName != recentFile {
-                    defer { fileHandle.closeFile() }
+        do {
+            if let fileHandle = FileHandle(forWritingAtPath: path.path), fileName != recentFile {
+                defer { fileHandle.closeFile() }
 
-                    fileHandle.seekToEndOfFile()
-                    fileHandle.write(("\n" + stringToWrite).data(using: .utf8)!)
-                } else {
-                    try stringToWrite.write(to: path, atomically: false, encoding: .utf8)
-                }
-            } catch {
-                print("Error saving to file: \(error.localizedDescription)")
+                fileHandle.seekToEndOfFile()
+                fileHandle.write(("\n" + stringToWrite).data(using: .utf8)!)
+            } else {
+                try stringToWrite.write(to: path, atomically: false, encoding: .utf8)
             }
+        } catch {
+            print("Error saving to file: \(error.localizedDescription)")
         }
     }
 
@@ -136,21 +167,20 @@ func saveToFiles(crypto: String, text: String) {
 
 func readFromFile(crypto: String) -> Double? {
     let file = "\(crypto)-USD-recent.txt"
-    if let directory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
 
-        let path = directory.appendingPathComponent(file)
+    let path = getDirectory().appendingPathComponent(file)
 
-        do {
-            let text = try String(contentsOf: path, encoding: .utf8)
-            let pattern = "(= )(.*)( USD)"
-            let regEx = try NSRegularExpression(pattern: pattern, options: .caseInsensitive)
-            let extract = regEx.matches(in: text, options: [], range: NSMakeRange(0, text.utf8.count))
+    do {
+        let text = try String(contentsOf: path, encoding: .utf8)
+        let pattern = "(= )(.*)( USD)"
+        let regEx = try NSRegularExpression(pattern: pattern, options: .caseInsensitive)
+        let extract = regEx.matches(in: text, options: [], range: NSMakeRange(0, text.utf8.count))
 
-            // Get the price data from the first match
-            let price = (text as NSString).substring(with: extract[0].rangeAt(2))
-            return Double(price)
-        } catch {}
-    }
+        // Get the price data from the first match
+        let price = (text as NSString).substring(with: extract[0].rangeAt(2))
+        return Double(price)
+    } catch {}
+
     return nil
 }
 
@@ -168,7 +198,9 @@ enum Crypto: String {
     case PLBT = "polybius"
     case BNT = "bancor"
 
-    // New values need to be inserted above + in allValues
+    // ***************************************************************
+    // New values need to be inserted above + in allValues array below
+    // ***************************************************************
 
     // You'll need to use the ID that Coinmarketcap uses.
     // E.g. In https://coinmarketcap.com/assets/gnosis-gno/,
