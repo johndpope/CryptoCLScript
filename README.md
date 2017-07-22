@@ -18,7 +18,7 @@ Note: You'll need to use the ID that Coinmarketcap uses. E.g. In `https://coinma
 ## Pro-tip
 To run it anywhere in Terminal with a command like `crypto`:
 ```
-swiftc main.swift -o crypto
+xcrun swiftc main.swift -o crypto
 sudo cp crypto /usr/local/bin
 ```
 ## To Do

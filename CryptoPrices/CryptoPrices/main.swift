@@ -36,7 +36,7 @@ for (index, flag) in flags.enumerated() {
 //
 
 func makeNetworkCall(completion: @escaping ([String: String]) -> Void) {
-    let endpoint = providerEndpoint + "?limit=100"
+    let endpoint = providerEndpoint + "?limit=200"
 
     if let endpointURL = URL(string: endpoint) {
         let request = URLRequest(url: endpointURL)
@@ -88,7 +88,10 @@ func getPrices(forCryptos cryptos: [Crypto]) {
     makeNetworkCall() { cryptoPrices in
 
         for crypto in cryptos {
-            guard let price = cryptoPrices[crypto.rawValue] else { continue }
+            guard let price = cryptoPrices[crypto.rawValue] else {
+                prices.append("")
+                continue
+            }
 
             var percentageChange = ""
             if let previousPrice = readFromFile(crypto: "\(crypto)"), let currentPrice = Double(price) {
